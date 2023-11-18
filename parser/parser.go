@@ -3,6 +3,7 @@ package parser
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -21,8 +22,8 @@ type Parser struct {
 func New(l *lexer.Lexer) *Parser {
 	p := &Parser{lexer: l}
 
-	p.lexer.NextToken()
-	p.lexer.NextToken()
+	p.nextToken()
+	p.nextToken()
 
 	return p
 }
@@ -36,6 +37,8 @@ func (p *Parser) peekTokenIs(t token.Type) bool {
 }
 
 func (p *Parser) parseValue() ast.Value {
+	log.Println("parseValue start", p.currentToken.Type)
+	defer log.Println("parseValue end")
 	switch p.currentToken.Type {
 	case token.LeftBrace:
 		return p.parseJSONObject()
@@ -68,10 +71,13 @@ func (p *Parser) nextToken() {
 }
 
 func (p *Parser) parseJSONObject() ast.Value {
+	log.Println("parseJSONObject start")
 	obj := ast.Object{Type: "Object"}
 	objState := ast.ObjStart
 
+	defer log.Println("parseJSONObject end")
 	for !p.currentTokenIs(token.EOF) {
+		log.Println("parseJSONObject", p.currentToken.Type, p.currentToken.Literal)
 		switch objState {
 		case ast.ObjStart:
 			if p.currentTokenIs(token.LeftBrace) {
@@ -118,9 +124,12 @@ func (p *Parser) parseJSONObject() ast.Value {
 }
 
 func (p *Parser) parseJSONArray() ast.Array {
+	log.Println("parseJSONArray start")
+	defer log.Println("parseJSONArray end")
 	array := ast.Array{Type: "Array"}
 	arrayState := ast.ArrayStart
 	for !p.currentTokenIs(token.EOF) {
+		log.Println("parseJSONArray", p.currentToken.Type, p.currentToken.Literal)
 		switch arrayState {
 		case ast.ArrayStart:
 			if p.currentTokenIs(token.LeftBracket) {
@@ -165,10 +174,12 @@ func (p *Parser) parseJSONArray() ast.Array {
 }
 
 func (p *Parser) parseJSONLiteral() ast.Literal {
+	log.Println("parseJSONLiteral start")
+	defer log.Println("parseJSONLiteral end")
 	val := ast.Literal{Type: "Literal"}
 
 	defer p.nextToken()
-
+	log.Println("parseJSONLiteral", p.currentToken.Type, p.currentToken.Literal)
 	switch p.currentToken.Type {
 	case token.String:
 		val.Value = p.parseString()

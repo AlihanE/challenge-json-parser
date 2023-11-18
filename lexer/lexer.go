@@ -1,6 +1,10 @@
 package lexer
 
-import "github.com/AlihanE/challenge-json-parser/token"
+import (
+	"log"
+
+	"github.com/AlihanE/challenge-json-parser/token"
+)
 
 type Lexer struct {
 	Input        []rune
@@ -92,10 +96,12 @@ func isNumber(char rune) bool {
 }
 
 func (l *Lexer) NextToken() token.Token {
+	log.Println("NextToken start")
+	defer log.Println("NextToken end")
 	var t token.Token
 
 	l.skipWhiteSpace()
-
+	log.Println("NextToken char", l.char)
 	switch l.char {
 	case '{':
 		t = newToken(token.LeftBrace, l.line, l.position, l.position+1, l.char)
@@ -145,7 +151,7 @@ func (l *Lexer) NextToken() token.Token {
 		}
 		t = newToken(token.Illegal, l.line, 1, 2, l.char)
 	}
-
+	log.Println("NextToken token literal", t.Literal)
 	l.readChar()
 
 	return t
