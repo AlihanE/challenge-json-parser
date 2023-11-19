@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	l := lexer.New("{")
+	l := lexer.New(`[{}]`)
 
 	p := parser.New(l)
 	v, err := p.ParseProgram()
@@ -19,8 +19,17 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	if len(p.Errors()) > 0 {
+		panic(p.Errors())
+	}
 
 	log.Println("Result", v.Type)
-	r := (*v.RootValue).(ast.Object)
-	log.Println(r)
+	switch (*v.RootValue).(type) {
+	case ast.Object:
+		r := (*v.RootValue).(ast.Object)
+		log.Println(r)
+	case ast.Array:
+		r := (*v.RootValue).(ast.Array)
+		log.Println(r)
+	}
 }

@@ -77,9 +77,10 @@ func (p *Parser) parseJSONObject() ast.Value {
 
 	defer log.Println("parseJSONObject end")
 	for !p.currentTokenIs(token.EOF) {
-		log.Println("parseJSONObject", p.currentToken.Type, p.currentToken.Literal)
+		log.Println("parseJSONObject currentToken", p.currentToken.Type, p.currentToken.Literal)
 		switch objState {
 		case ast.ObjStart:
+			log.Println("parseJSONObject state ast.ObjStart")
 			if p.currentTokenIs(token.LeftBrace) {
 				objState = ast.ObjOpen
 				obj.Start = p.currentToken.Start
@@ -89,6 +90,7 @@ func (p *Parser) parseJSONObject() ast.Value {
 				return nil
 			}
 		case ast.ObjOpen:
+			log.Println("parseJSONObject state ast.ObjOpen")
 			if p.currentTokenIs(token.RightBrace) {
 				p.nextToken()
 				obj.End = p.currentToken.End
@@ -98,6 +100,7 @@ func (p *Parser) parseJSONObject() ast.Value {
 			obj.Children = append(obj.Children, prop)
 			objState = ast.ObjProperty
 		case ast.ObjProperty:
+			log.Println("parseJSONObject state ast.ObjProperty")
 			if p.currentTokenIs(token.RightBrace) {
 				p.nextToken()
 				obj.End = p.currentToken.Start
@@ -110,12 +113,17 @@ func (p *Parser) parseJSONObject() ast.Value {
 				return nil
 			}
 		case ast.ObjComma:
+			log.Println("parseJSONObject state ast.ObjComma")
 			prop := p.parseProperty()
 			if prop.Value != nil {
 				obj.Children = append(obj.Children, prop)
 				objState = ast.ObjProperty
 			}
 		}
+	}
+
+	if p.currentTokenIs(token.EOF) {
+		p.parseError(fmt.Sprintf("Error parsing JSON object Expected `}` or `,` token, got: %s", p.currentToken.Literal))
 	}
 
 	obj.End = p.currentToken.Start
@@ -169,6 +177,10 @@ func (p *Parser) parseJSONArray() ast.Array {
 		}
 	}
 
+	if p.currentTokenIs(token.EOF) {
+		p.parseError(fmt.Sprintf("Error parsing JSON object Expected `]` or `,` token, got: %s", p.currentToken.Literal))
+	}
+
 	array.End = p.currentToken.Start
 	return array
 }
@@ -217,6 +229,7 @@ func (p *Parser) parseProperty() ast.Property {
 				p.nextToken()
 			} else {
 				p.parseError(fmt.Sprintf("Error parsing property start. Expected String token, got: %s", p.currentToken.Literal))
+				return prop
 			}
 		case ast.PropertyKey:
 			if p.currentTokenIs(token.Colon) {
@@ -224,6 +237,7 @@ func (p *Parser) parseProperty() ast.Property {
 				p.nextToken()
 			} else {
 				p.parseError(fmt.Sprintf("Error parsing property. Expected Colon token, got: %s", p.currentToken.Literal))
+				return prop
 			}
 		case ast.PropertyColon:
 			val := p.parseValue()
